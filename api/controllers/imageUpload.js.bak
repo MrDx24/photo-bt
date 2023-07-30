@@ -1,0 +1,81 @@
+const Image = require("../model/imageModel");
+const path = require("path");
+const fs = require("fs");
+const mongoose = require("mongoose");
+
+function getdatetime () {
+  const today = new Date();
+  var yyyy = today.getFullYear();
+  var m = (today.getMonth() + 1);
+  var dd = today.getDate();
+  var time = today.getHours()+":"+today.getMinutes()+":"+today.getSeconds()+":"+today.getMilliseconds();
+  var mm=0;
+  if(m<10){
+      mm=("0"+m);
+  }
+  else{
+      mm=m;
+  }
+  var result = (dd+"/"+mm+"/"+yyyy)+"-"+(dd+"/"+mm+"/"+yyyy+"_"+time);
+
+  return result;
+} 
+
+
+exports.image_upload = async(req, res, next) => {
+  
+  var dttm = getdatetime().split("-")[1];
+  var dt = getdatetime().split("-")[0];
+  console.log(req.file.path)
+  const obj = {
+    img: {
+      data: fs.readFileSync(
+        path.join("images/" + req.file.filename)
+      ),
+      contentType: req.file.mimetype,
+    },
+  };
+  const newImage = new Image({
+    _id: new mongoose.Types.ObjectId(),
+    name: req.body.name + "_" + dttm,
+    category: req.body.category,
+    imagefile: obj.img,
+    date: dt
+  });
+  const savingImage = newImage.save();
+  
+    if(savingImage) 
+    { 
+      fs.unlinkSync(req.file.path);
+      res.status(201).json({
+        message: "Image uploaded successfully",
+        result : savingImage
+      });
+      
+    } 
+    else { 
+      fs.unlinkSync(req.file.path);
+      res.status(500).json({
+        message: "Image upload failed",
+        result : savingImage
+      });
+      console.log(err);
+    }
+  
+  
+};
+
+
+exports.image_get = async(req, res, next) => {
+  console.log(req.params.id)
+  var result = await Image.find({category: req.params.id});
+  console.log(result[0].imagefile.data)
+  if (result && result.length > 0) {
+    res.status(200).json(result); // Send the array directly in the response
+  } 
+  else {
+    res.status(500).json({ message: "No images found for the specified category." });
+  }
+};
+
+
