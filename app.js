@@ -32,6 +32,10 @@ app.use((req, res, next) => {
 // Routes which should handle requests
 app.use("/upload",  uploadRoutes);
 
+app.use("/",  (req, res, next) => {
+  res.status(200).json("Welcome!!!");
+});
+
 app.use((req, res, next) => {
   const error = new Error("Not found");
   error.status = 404;
